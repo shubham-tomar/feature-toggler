@@ -3,11 +3,6 @@ Toggling Features in a Live App (Without Deployment)
 
 ## Table of Contents
 - [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Overview
 
