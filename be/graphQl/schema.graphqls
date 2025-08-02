@@ -41,6 +41,8 @@ type ToggleState {
     enabled: Boolean!
     environment: Environment!
     feature_flag: FeatureFlag!
+    updated_at: DateTime!
+    updated_by: User! 
 }
 
 type FeatureFlag {
@@ -48,6 +50,7 @@ type FeatureFlag {
     key: String!
     name: String!
     description: String
+    created_by: User!
     created_at: DateTime!
     updated_at: DateTime!
     states: [ToggleState!]!
@@ -57,4 +60,82 @@ type FeatureFlag {
 # ----------------------------
 # Queries & Mutations
 # ----------------------------
+
+type Query {
+    me: User! # Current logged in user
+    projects: [Project!]! # List of projects
+    project(id: ID!): Project! # Get a project by ID
+    feature_flag(id: ID!): FeatureFlag! # Get a feature flag by ID
+    feature_flag_by_key(key: String!): FeatureFlag! # Get a feature flag by key    
+}
+
+type Mutation {
+    createProject(name: String!): Project!
+    createUser(input: CreateUserInput!): User!
+    updateUser(id: ID!, input: UpdateUserInput!): User!
+    updateProject(id: ID!, input: UpdateProjectInput!): Project!
+    deleteProject(id: ID!): Boolean!
+
+     # Project membership
+    addProjectMember(input: AddProjectMemberInput!): ProjectUser!
+    updateProjectMember(id: ID!, role: Role!): ProjectUser!
+    removeProjectMember(id: ID!): Boolean!
+    
+    # Feature flag management
+    createFeatureFlag(input: CreateFeatureFlagInput!): FeatureFlag!
+    updateFeatureFlag(id: ID!, input: UpdateFeatureFlagInput!): FeatureFlag!
+    deleteFeatureFlag(id: ID!): Boolean!
+    
+    # Toggle management
+    toggleFeatureFlag(input: ToggleFeatureFlagInput!): ToggleState!
+}
+
+input CreateUserInput {
+    name: String!
+    email: String!
+}
+
+input UpdateUserInput {
+    name: String
+    email: String
+}
+
+input CreateProjectInput {
+    name: String!
+}
+
+input UpdateProjectInput {
+    name: String
+}
+
+input AddProjectMemberInput {
+    projectId: ID!
+    userId: ID!
+    role: Role!
+}
+
+input CreateFeatureFlagInput {
+    projectId: ID!
+    key: String!
+    name: String!
+    description: String
+    # Initialize with default states for all environments
+    initialStates: [InitialStateInput!]
+}
+
+input InitialStateInput {
+    environment: Environment!
+    enabled: Boolean!
+}
+
+input UpdateFeatureFlagInput {
+    name: String
+    description: String
+}
+
+input ToggleFeatureFlagInput {
+    featureFlagId: ID!
+    environment: Environment!
+    enabled: Boolean!
+}
 
