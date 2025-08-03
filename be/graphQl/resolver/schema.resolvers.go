@@ -7,6 +7,8 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	userctx "github.com/shubham-tomar/feature-toggler/graphQl/context"
 
 	"github.com/shubham-tomar/feature-toggler/graphQl/generated"
 	"github.com/shubham-tomar/feature-toggler/graphQl/model"
@@ -14,7 +16,23 @@ import (
 
 // CreateProject is the resolver for the createProject field.
 func (r *mutationResolver) CreateProject(ctx context.Context, name string) (*model.Project, error) {
-	panic(fmt.Errorf("not implemented: CreateProject - createProject"))
+	user := userctx.GetUser(ctx)
+	project := &model.Project{
+		ID:   uuid.New().String(),
+		Name: name,
+		Members: []*model.ProjectUser{
+			{
+				ID:     uuid.New().String(),
+				User:   user,
+				Role:   model.RoleAdmin,
+				Project: nil, // Set later to avoid cycle
+			},
+		},
+	}
+	project.Members[0].Project = project
+
+	r.Resolver.projects = append(r.Resolver.projects, project)
+	return project, nil
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -74,7 +92,7 @@ func (r *mutationResolver) ToggleFeatureFlag(ctx context.Context, input model.To
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: Me - me"))
+	return userctx.GetUser(ctx), nil
 }
 
 // Projects is the resolver for the projects field.
