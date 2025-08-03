@@ -1,0 +1,24 @@
+# Path to your GraphQL schema
+schema:
+  - graphQl/schema.graphql
+
+# Where gqlgen will write the generated execution code
+exec:
+  filename: graphQl/generated/generated.go
+  package: generated
+
+# Where gqlgen will write the generated Go types for GraphQL models
+model:
+  filename: graphQl/model/models_gen.go
+  package: model
+
+# Where your resolver implementations live
+resolver:
+  layout: follow-schema
+  dir: graphQl/resolver
+  package: resolver
+
+# Optional type overrides
+models:
+  DateTime:
+    model: github.com/99designs/gqlgen/graphql.Time
