@@ -13,7 +13,7 @@ const userKey = ctxKey("user")
 var MockUser = &model.User{
 	ID:    "1",
 	Name:  "tomar",
-	Email: "tomar@pixis.ai",
+	Email: "tomar@gmail.com",
 }
 
 func WithUser(ctx context.Context) context.Context {
