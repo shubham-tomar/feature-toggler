@@ -1,3 +1,5 @@
 
 flake.lock
 be/go.sum
+feature-toggler.db
+.env
