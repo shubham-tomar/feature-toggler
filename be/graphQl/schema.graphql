@@ -70,13 +70,15 @@ type Query {
 }
 
 type Mutation {
-    createProject(name: String!): Project!
+
+    # User operations
     createUser(input: CreateUserInput!): User!
     updateUser(id: ID!, input: UpdateUserInput!): User!
-    updateProject(id: ID!, input: UpdateProjectInput!): Project!
-    deleteProject(id: ID!): Boolean!
 
      # Project membership
+    createProject(name: String!): Project!
+    updateProject(id: ID!, input: UpdateProjectInput!): Project!
+    deleteProject(id: ID!): Boolean!
     addProjectMember(input: AddProjectMemberInput!): ProjectUser!
     updateProjectMember(id: ID!, role: Role!): ProjectUser!
     removeProjectMember(id: ID!): Boolean!
