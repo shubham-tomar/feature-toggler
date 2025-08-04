@@ -17,22 +17,7 @@ import (
 // CreateProject is the resolver for the createProject field.
 func (r *mutationResolver) CreateProject(ctx context.Context, name string) (*model.Project, error) {
 	user := userctx.GetUser(ctx)
-	project := &model.Project{
-		ID:   uuid.New().String(),
-		Name: name,
-		Members: []*model.ProjectUser{
-			{
-				ID:     uuid.New().String(),
-				User:   user,
-				Role:   model.RoleAdmin,
-				Project: nil, // Set later to avoid cycle
-			},
-		},
-	}
-	project.Members[0].Project = project
-
-	r.Resolver.projects = append(r.Resolver.projects, project)
-	return project, nil
+	return r.Storage.CreateProject(ctx, user, name)
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -72,7 +57,43 @@ func (r *mutationResolver) RemoveProjectMember(ctx context.Context, id string) (
 
 // CreateFeatureFlag is the resolver for the createFeatureFlag field.
 func (r *mutationResolver) CreateFeatureFlag(ctx context.Context, input model.CreateFeatureFlagInput) (*model.FeatureFlag, error) {
-	panic(fmt.Errorf("not implemented: CreateFeatureFlag - createFeatureFlag"))
+	user := userctx.GetUser(ctx)
+	
+	// Create the feature flag
+	flag := &model.FeatureFlag{
+		ID:          uuid.New().String(),
+		Key:         input.Key,
+		Name:        input.Name,
+		Description: input.Description,
+		Project:     &model.Project{ID: input.ProjectID},
+		CreatedBy:   user,
+	}
+	
+	// Create toggle states for each environment
+	var states []*model.ToggleState
+	for _, env := range input.InitialStates {
+		state := &model.ToggleState{
+			ID:          uuid.New().String(),
+			FeatureFlag: flag,
+			Environment: env.Environment,
+			Enabled:     env.Enabled,
+			UpdatedBy:   user,
+		}
+		states = append(states, state)
+	}
+	
+	// Use storage interface to create feature flag with states
+	if err := r.Storage.CreateFeatureFlag(ctx, flag, states); err != nil {
+		return nil, fmt.Errorf("failed to create feature flag: %w", err)
+	}
+	
+	// Get complete feature flag with all related data
+	flag, err := r.Storage.GetFeatureFlagByID(ctx, flag.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feature flag: %w", err)
+	}
+	
+	return flag, nil
 }
 
 // UpdateFeatureFlag is the resolver for the updateFeatureFlag field.
@@ -87,32 +108,89 @@ func (r *mutationResolver) DeleteFeatureFlag(ctx context.Context, id string) (bo
 
 // ToggleFeatureFlag is the resolver for the toggleFeatureFlag field.
 func (r *mutationResolver) ToggleFeatureFlag(ctx context.Context, input model.ToggleFeatureFlagInput) (*model.ToggleState, error) {
-	panic(fmt.Errorf("not implemented: ToggleFeatureFlag - toggleFeatureFlag"))
+	user := userctx.GetUser(ctx)
+	
+	// Get existing toggle state
+	flag, err := r.Storage.GetFeatureFlagByID(ctx, input.FeatureFlagID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find feature flag with ID %s: %w", input.FeatureFlagID, err)
+	}
+	
+	// Find state for the environment
+	var state *model.ToggleState
+	for _, s := range flag.States {
+		if s.Environment == input.Environment {
+			state = s
+			break
+		}
+	}
+	
+	if state == nil {
+		return nil, fmt.Errorf("no toggle state found for environment %s", input.Environment)
+	}
+	
+	// Update toggle state
+	state.Enabled = input.Enabled
+	state.UpdatedBy = user
+	
+	// Save the updated state
+	if err := r.Storage.UpdateFeatureFlagState(ctx, state); err != nil {
+		return nil, fmt.Errorf("failed to update toggle state: %w", err)
+	}
+	
+	return state, nil
 }
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	return userctx.GetUser(ctx), nil
+	user := userctx.GetUser(ctx)
+	
+	// Get complete user data from database
+	dbUser, err := r.Storage.GetUserByID(ctx, user.ID)
+	if err != nil {
+		// If user not found in db yet, just return the context user
+		return user, nil
+	}
+	
+	return dbUser, nil
 }
 
 // Projects is the resolver for the projects field.
 func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) {
-	panic(fmt.Errorf("not implemented: Projects - projects"))
+	return r.Storage.GetProjects(ctx)
 }
 
 // Project is the resolver for the project field.
 func (r *queryResolver) Project(ctx context.Context, id string) (*model.Project, error) {
-	panic(fmt.Errorf("not implemented: Project - project"))
+	// Use storage to get project by ID
+	project, err := r.Storage.GetProjectByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
+	}
+	
+	return project, nil
 }
 
 // FeatureFlag is the resolver for the feature_flag field.
 func (r *queryResolver) FeatureFlag(ctx context.Context, id string) (*model.FeatureFlag, error) {
-	panic(fmt.Errorf("not implemented: FeatureFlag - feature_flag"))
+	// Use storage to get feature flag by ID
+	flag, err := r.Storage.GetFeatureFlagByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feature flag: %w", err)
+	}
+	
+	return flag, nil
 }
 
 // FeatureFlagByKey is the resolver for the feature_flag_by_key field.
 func (r *queryResolver) FeatureFlagByKey(ctx context.Context, key string) (*model.FeatureFlag, error) {
-	panic(fmt.Errorf("not implemented: FeatureFlagByKey - feature_flag_by_key"))
+	// Use storage to get feature flag by key
+	flag, err := r.Storage.GetFeatureFlagByKey(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feature flag by key: %w", err)
+	}
+	
+	return flag, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

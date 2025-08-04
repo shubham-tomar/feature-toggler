@@ -5,6 +5,8 @@ go 1.24.0
 require (
 	github.com/99designs/gqlgen v0.17.78
 	github.com/gin-gonic/gin v1.10.1
+	github.com/google/uuid v1.6.0
+	github.com/mattn/go-sqlite3 v1.14.30
 	github.com/vektah/gqlparser/v2 v2.5.30
 )
 
@@ -21,7 +23,6 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
