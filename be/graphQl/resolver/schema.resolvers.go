@@ -22,7 +22,17 @@ func (r *mutationResolver) CreateProject(ctx context.Context, name string) (*mod
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	user := &model.User{
+		ID:    uuid.New().String(),
+		Name:  input.Name,
+		Email: input.Email,
+	}
+	
+	if err := r.Storage.CreateUser(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+	
+	return user, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
